@@ -1,4 +1,3 @@
-# frontend/Dockerfile
 FROM node:20-alpine AS builder
 
 WORKDIR /app
@@ -7,7 +6,7 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 
 # Install dependencies
-RUN npm ci
+RUN npm install
 
 # Copy source code
 COPY . .
@@ -29,11 +28,11 @@ COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/next.config.ts ./next.config.ts
 
 # Install production dependencies only
-RUN npm ci --only=production
+RUN npm install --only=production
 
 EXPOSE 3000
 
 ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
+ENV HOSTNAME=0.0.0.0
 
 CMD ["npm", "start"]
