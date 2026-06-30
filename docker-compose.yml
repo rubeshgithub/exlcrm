@@ -1,0 +1,75 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: exlcrm-backend
+    environment:
+      - MONGODB_URL=mongodb+srv://username:***@exlcrm.com
+      - REDIS_URL=redis://redis:***@exlcrm.com
+    depends_on:
+      - redis
+    restart: unless-stopped
+    networks:
+      - exlcrm-network
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: exlcrm-frontend
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:8000
+      - NEXTAUTH_SECRET=${APP_...Y}
+      - NEXTAUTH_URL=https:...om
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - exlcrm-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: exlcrm-redis
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+    networks:
+      - exlcrm-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: exlcrm-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ../nginx/exlcrm.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - frontend
+      - backend
+    restart: unless-stopped
+    networks:
+      - exlcrm-network
+
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    container_name: exlcrm-monitor
+    volumes:
+      - uptime_data:/app/data
+    ports:
+      - "3001:3001"
+    restart: unless-stopped
+    networks:
+      - exlcrm-network
+
+volumes:
+  redis_data:
+  uptime_data:
+
+networks:
+  exlcrm-network:
+    driver: bridge
